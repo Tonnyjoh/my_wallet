@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Portefeuille</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div id="app" class="min-h-screen pb-20">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+          Mon Portefeuille
+        </h1>
+        <div class="flex gap-2">
+          <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors" id="exportBtn" title="Exporter">
+            <i data-lucide="download" class="w-5 h-5 text-gray-600"></i>
+          </button>
+          <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors" id="importBtn" title="Importer">
+            <i data-lucide="upload" class="w-5 h-5 text-gray-600"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-md mx-auto px-4">
+      <!-- Tableau de bord -->
+      <section class="py-4 space-y-4">
+        <!-- Total -->
+        <div class="bg-linear-to-br from-gray-700 to-gray-800 rounded-xl p-5 shadow-md text-white">
+          <h3 class="text-xs font-medium uppercase tracking-wider opacity-90 mb-1">Total Général</h3>
+          <p class="text-3xl font-bold" id="totalAmount">0 Ar</p>
+        </div>
+        
+        <!-- Comptes -->
+        <div class="space-y-3" id="accountsGrid">
+          <!-- Les comptes seront injectés ici -->
+        </div>
+
+        <button class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2" id="addAccountBtn">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Ajouter un compte
+        </button>
+      </section>
+
+      <!-- Navigation Bottom -->
+      <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+        <div class="max-w-md mx-auto grid grid-cols-3 gap-1 p-2">
+          <button class="tab flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors active" data-tab="transactions">
+            <i data-lucide="list" class="w-5 h-5"></i>
+            <span class="text-xs font-medium">Historique</span>
+          </button>
+          <button class="tab flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors" data-tab="add-expense">
+            <i data-lucide="trending-down" class="w-5 h-5"></i>
+            <span class="text-xs font-medium">Dépense</span>
+          </button>
+          <button class="tab flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors" data-tab="add-income">
+            <i data-lucide="trending-up" class="w-5 h-5"></i>
+            <span class="text-xs font-medium">Revenu</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenu des onglets -->
+      <div class="py-4">
+        <!-- Historique des transactions -->
+        <div class="tab-pane active space-y-4" id="transactions">
+          <!-- Filtres -->
+          <div class="bg-white rounded-lg p-3 shadow-sm space-y-2">
+            <select id="filterAccount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm">
+              <option value="">Tous les comptes</option>
+            </select>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="filterType" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm">
+                <option value="">Tous les types</option>
+                <option value="income">Revenus</option>
+                <option value="expense">Dépenses</option>
+              </select>
+              <button class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-sm transition-colors" id="clearFilters">Réinitialiser</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="date" id="filterDateStart" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm">
+              <input type="date" id="filterDateEnd" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm">
+            </div>
+          </div>
+
+          <!-- Liste -->
+          <div class="space-y-2" id="transactionsList">
+            <!-- Les transactions seront injectées ici -->
+          </div>
+        </div>
+
+        <!-- Formulaire Dépense -->
+        <div class="tab-pane space-y-4" id="add-expense">
+          <form class="bg-white rounded-lg p-4 shadow-sm space-y-4" id="expenseForm">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <i data-lucide="trending-down" class="w-5 h-5 text-red-600"></i>
+              Nouvelle Dépense
+            </h2>
+            
+            <div>
+              <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input type="date" id="expenseDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+            </div>
+
+            <div>
+              <label for="expenseAmount" class="block text-sm font-medium text-gray-700 mb-1">Montant (Ar)</label>
+              <input type="number" id="expenseAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" min="0" step="0.01" required>
+            </div>
+
+            <div>
+              <label for="expenseDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea id="expenseDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none" required></textarea>
+            </div>
+
+            <div>
+              <label for="expenseAccount" class="block text-sm font-medium text-gray-700 mb-1">Compte</label>
+              <select id="expenseAccount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+                <!-- Les comptes seront injectés ici -->
+              </select>
+            </div>
+
+            <div>
+              <label for="expenseCategory" class="block text-sm font-medium text-gray-700 mb-1">Catégorie (optionnel)</label>
+              <input type="text" id="expenseCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" list="categories">
+              <datalist id="categories">
+                <option value="Alimentation">
+                <option value="Transport">
+                <option value="Logement">
+                <option value="Loisirs">
+                <option value="Santé">
+                <option value="Autres">
+              </datalist>
+            </div>
+
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition-colors">Enregistrer la dépense</button>
+          </form>
+        </div>
+
+        <!-- Formulaire Revenu -->
+        <div class="tab-pane space-y-4" id="add-income">
+          <form class="bg-white rounded-lg p-4 shadow-sm space-y-4" id="incomeForm">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
+              Nouveau Revenu
+            </h2>
+            
+            <div>
+              <label for="incomeDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input type="date" id="incomeDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+            </div>
+
+            <div>
+              <label for="incomeAmount" class="block text-sm font-medium text-gray-700 mb-1">Montant (Ar)</label>
+              <input type="number" id="incomeAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" min="0" step="0.01" required>
+            </div>
+
+            <div>
+              <label for="incomeDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea id="incomeDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none" required></textarea>
+            </div>
+
+            <div>
+              <label for="incomeAccount" class="block text-sm font-medium text-gray-700 mb-1">Compte destinataire</label>
+              <select id="incomeAccount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+                <!-- Les comptes seront injectés ici -->
+              </select>
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">Enregistrer le revenu</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal pour ajouter un compte -->
+  <div class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" id="accountModal">
+    <div class="bg-white rounded-xl p-5 w-full max-w-sm shadow-xl animate-slide-up">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="credit-card" class="w-5 h-5"></i>
+        Nouveau Compte
+      </h2>
+      <form id="accountForm" class="space-y-4">
+        <div>
+          <label for="accountName" class="block text-sm font-medium text-gray-700 mb-1">Nom du compte</label>
+          <input type="text" id="accountName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" placeholder="Ex: Mvola, Épargne..." required>
+        </div>
+        <div>
+          <label for="accountBalance" class="block text-sm font-medium text-gray-700 mb-1">Solde initial (Ar)</label>
+          <input type="number" id="accountBalance" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" min="0" step="0.01" value="0" required>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors" id="cancelAccountBtn">Annuler</button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal pour éditer une transaction -->
+  <div class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" id="editModal">
+    <div class="bg-white rounded-xl p-5 w-full max-w-sm shadow-xl animate-slide-up">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="edit" class="w-5 h-5"></i>
+        Modifier la transaction
+      </h2>
+      <form id="editForm" class="space-y-4">
+        <input type="hidden" id="editTransactionId">
+        
+        <div>
+          <label for="editDate" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <input type="date" id="editDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+        </div>
+
+        <div>
+          <label for="editAmount" class="block text-sm font-medium text-gray-700 mb-1">Montant (Ar)</label>
+          <input type="number" id="editAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" min="0" step="0.01" required>
+        </div>
+
+        <div>
+          <label for="editDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea id="editDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none" required></textarea>
+        </div>
+
+        <div>
+          <label for="editAccount" class="block text-sm font-medium text-gray-700 mb-1">Compte</label>
+          <select id="editAccount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400" required>
+            <!-- Les comptes seront injectés ici -->
+          </select>
+        </div>
+
+        <div id="editCategoryGroup">
+          <label for="editCategory" class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+          <input type="text" id="editCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors" id="cancelEditBtn">Annuler</button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <input type="file" id="importInput" style="display: none;" accept=".json">
+
+  <script type="module" src="/src/main.js"></script>
+  <script>
+    // Initialiser les icônes Lucide après le chargement du DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
