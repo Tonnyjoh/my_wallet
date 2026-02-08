@@ -1,5 +1,7 @@
 import AppState from './state.js';
 import { formatCurrency, formatDate } from './utils.js';
+import './supabase.js'; // Initialiser Supabase
+import { supabase } from './supabase.js';
 
 const state = new AppState();
 
@@ -48,7 +50,19 @@ const elements = {
   
   // Onglets
   tabs: document.querySelectorAll('.tab'),
-  tabPanes: document.querySelectorAll('.tab-pane')
+  tabPanes: document.querySelectorAll('.tab-pane'),
+  
+  // Authentification
+  authBtn: document.getElementById('authBtn'),
+  authUserEmail: document.getElementById('authUserEmail'),
+  authModal: document.getElementById('authModal'),
+  authForm: document.getElementById('authForm'),
+  authEmail: document.getElementById('authEmail'),
+  authPassword: document.getElementById('authPassword'),
+  authMessage: document.getElementById('authMessage'),
+  cancelAuthBtn: document.getElementById('cancelAuthBtn'),
+  loginBtn: document.getElementById('loginBtn'),
+  signupBtn: document.getElementById('signupBtn')
 };
 
 // Initialisation des dates par défaut
@@ -77,6 +91,148 @@ elements.tabs.forEach(tab => {
       lucide.createIcons();
     }
   });
+});
+
+// === AUTHENTIFICATION ===
+function showAuthMessage(message, type = 'info') {
+  elements.authMessage.textContent = message;
+  elements.authMessage.className = `text-sm ${
+    type === 'success' ? 'text-green-600' : 
+    type === 'error' ? 'text-red-600' : 
+    'text-gray-600'
+  }`;
+  elements.authMessage.classList.remove('hidden');
+}
+
+function hideAuthMessage() {
+  elements.authMessage.classList.add('hidden');
+}
+
+elements.authBtn.addEventListener('click', async () => {
+  if (state.user) {
+    // Déconnexion
+    await supabase.auth.signOut();
+    updateAuthUI();
+  } else {
+    // Ouvrir modal de connexion
+    elements.authModal.classList.remove('hidden');
+    elements.authModal.classList.add('flex');
+    elements.authForm.reset();
+    hideAuthMessage();
+  }
+});
+
+elements.cancelAuthBtn.addEventListener('click', () => {
+  elements.authModal.classList.add('hidden');
+  elements.authModal.classList.remove('flex');
+  elements.authForm.reset();
+  hideAuthMessage();
+});
+
+// Connexion
+elements.authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = elements.authEmail.value.trim();
+  const password = elements.authPassword.value;
+  
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    showAuthMessage('Connexion réussie !', 'success');
+    setTimeout(() => {
+      elements.authModal.classList.add('hidden');
+      elements.authModal.classList.remove('flex');
+      updateAuthUI();
+    }, 1000);
+  } catch (error) {
+    console.error('Erreur connexion:', error);
+    showAuthMessage('Erreur: ' + error.message, 'error');
+  }
+});
+
+// Inscription
+elements.signupBtn.addEventListener('click', async () => {
+  const email = elements.authEmail.value.trim();
+  const password = elements.authPassword.value;
+  
+  if (!email || !password) {
+    showAuthMessage('Veuillez remplir tous les champs', 'error');
+    return;
+  }
+  
+  if (password.length < 6) {
+    showAuthMessage('Le mot de passe doit contenir au moins 6 caractères', 'error');
+    return;
+  }
+  
+  try {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+    if (error) throw error;
+    showAuthMessage('Inscription réussie ! Connectez-vous maintenant.', 'success');
+  } catch (error) {
+    console.error('Erreur inscription:', error);
+    showAuthMessage('Erreur: ' + error.message, 'error');
+  }
+});
+
+function updateAuthUI() {
+  const emailSpan = elements.authUserEmail;
+  
+  if (emailSpan) {
+    if (state.user) {
+      // Utilisateur connecté - afficher l'email tronqué
+      const email = state.user.email || '';
+      const emailPrefix = email.split('@')[0];
+      const truncated = emailPrefix.length > 8 ? emailPrefix.substring(0, 8) + '...' : emailPrefix;
+      emailSpan.textContent = '@' + truncated;
+      emailSpan.classList.remove('hidden');
+      elements.authBtn.title = 'Déconnexion (' + email + ')';
+      
+      // Masquer l'icône si elle existe
+      const icon = elements.authBtn?.querySelector('i');
+      if (icon) {
+        icon.style.display = 'none';
+      }
+      const svg = elements.authBtn?.querySelector('svg');
+      if (svg) {
+        svg.style.display = 'none';
+      }
+    } else {
+      // Utilisateur déconnecté - afficher icône user
+      emailSpan.textContent = '';
+      emailSpan.classList.add('hidden');
+      elements.authBtn.title = 'Connexion';
+      
+      // Réafficher l'icône
+      const icon = elements.authBtn?.querySelector('i');
+      if (icon) {
+        icon.style.display = '';
+        icon.setAttribute('data-lucide', 'user');
+      }
+      const svg = elements.authBtn?.querySelector('svg');
+      if (svg) {
+        svg.style.display = '';
+      }
+      lucide.createIcons();
+    }
+  } else {
+    console.error('[UI] emailSpan non trouvé');
+  }
+}
+
+// Écouter les changements d'auth
+supabase.auth.onAuthStateChange((event, session) => {
+  state.user = session?.user || null;
+  if (state.user) {
+    state.loadFromSupabase();
+  }
+  updateAuthUI();
 });
 
 // === GESTION DES COMPTES ===
@@ -230,7 +386,10 @@ function renderTransactions() {
     return;
   }
   
-  elements.transactionsList.innerHTML = transactions.map(t => `
+  elements.transactionsList.innerHTML = transactions.map(t => {
+    const accountName = t.account_name || t.accountName || 'Compte inconnu';
+    const balanceAfter = t.balance_after || t.balanceAfter || 0;
+    return `
     <div class="bg-white rounded-lg p-4 shadow-sm">
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-start gap-3 flex-1 min-w-0">
@@ -240,9 +399,9 @@ function renderTransactions() {
           <div class="flex-1 min-w-0">
             <h4 class="font-semibold text-gray-900 text-sm truncate">${t.description}</h4>
             <p class="text-xs text-gray-500 mt-0.5">
-              ${formatDate(t.date)} • ${t.accountName}${t.category ? ` • ${t.category}` : ''}
+              ${formatDate(t.date)} • ${accountName}${t.category ? ` • ${t.category}` : ''}
             </p>
-            <p class="text-xs text-gray-400 mt-1">Solde: ${formatCurrency(t.balanceAfter)}</p>
+            <p class="text-xs text-gray-400 mt-1">Solde: ${formatCurrency(balanceAfter)}</p>
           </div>
         </div>
         <div class="flex flex-col items-end gap-2">
@@ -260,7 +419,7 @@ function renderTransactions() {
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
   
   // Rafraîchir les icônes Lucide
   if (typeof lucide !== 'undefined') {
@@ -294,9 +453,9 @@ window.editTransaction = (id) => {
   elements.editModal.classList.add('flex');
 };
 
-window.deleteTransaction = (id) => {
+window.deleteTransaction = async (id) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-    state.deleteTransaction(id);
+    await state.deleteTransaction(id);
     showNotification('Transaction supprimée', 'success');
   }
 };
